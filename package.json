@@ -8,7 +8,6 @@
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:ui": "rm -rf build && cd ../part2-notes-part2-8/part2-notes-part2-8/ && npm run build --prod && cp -r build ../../nodejs-first",
-    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push"
   },
   "keywords": [],
   "author": "",
