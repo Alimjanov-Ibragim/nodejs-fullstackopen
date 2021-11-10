@@ -20,7 +20,7 @@ const noteSchema = new mongoose.Schema({
   date: Date,
   important: Boolean,
   name: String,
-  phone: Number
+  phone: String
 });
 
 const Note = mongoose.model('Note', noteSchema);

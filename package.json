@@ -7,18 +7,21 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:ui": "rm -rf build && cd ../part2-notes-part2-8/part2-notes-part2-8/ && npm run build --prod && cp -r build ../../nodejs-first"
+    "build:ui": "rm -rf build && cd ../part2-notes-part2-8/part2-notes-part2-8/ && npm run build --prod && cp -r build ../../nodejs-first",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "mongoose": "^6.0.12",
     "morgan": "^1.10.0"
   },
   "devDependencies": {
+    "eslint": "^8.2.0",
     "nodemon": "^2.0.14"
   }
 }

@@ -1,114 +1,92 @@
 const express = require('express');
-const cors = require('cors');
 const app = express();
+const cors = require('cors');
+require('dotenv').config();
+const Note = require('./models/note');
 
-app.use(express.json());
 app.use(express.static('build'));
 app.use(cors());
+app.use(express.json());
 
-// const requestLogger = (request, response, next) => {
-//   console.log('Method:', request.method);
-//   console.log('Path:  ', request.path);
-//   console.log('Body:  ', request.body);
-//   console.log('---');
-//   next();
-// };
-// app.use(requestLogger);
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
 
-let persons = [
-  {
-    id: 1,
-    name: 'Arto Hellas',
-    number: '040-123456'
-  },
-  {
-    id: 2,
-    name: 'Ada Lovelace',
-    number: '39-44-5323523'
-  },
-  {
-    id: 3,
-    name: 'Dan Abramov',
-    number: '12-43-234345'
-  },
-  {
-    id: 4,
-    name: 'Mary Poppendieck',
-    number: '39-23-6423122'
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' });
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message });
   }
-];
 
-app.get('/info', (request, response) => {
-  response.send(
-    `<h1>Phonebook has info for ${
-      persons.length
-    } people</h1> <br /> ${new Date()}`
-  );
-});
-
-app.get('/', (request, response) => {
-  response.send('<h1>Hello World</h1>');
-});
-
-app.get('/api/persons', (request, response) => {
-  response.json(persons);
-});
-
-app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
-  const note = persons.find(note => note.id === id);
-
-  if (note) {
-    response.json(note);
-  } else {
-    response.status(404).send('Note not found!').end();
-  }
-});
-
-app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter(note => note.id !== id);
-
-  response.status(204).end();
-});
-
-const generateId = () => {
-  const maxId = Math.floor(Math.random() * (100 - 1) + 1);
-  return maxId + 1;
+  next(error);
 };
 
-app.post('/api/persons', (request, response) => {
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method);
+  console.log('Path:  ', request.path);
+  console.log('Body:  ', request.body);
+  console.log('---');
+  next();
+};
+
+app.use(requestLogger);
+
+app.get('/api/notes', (request, response) => {
+  Note.find({}).then(notes => {
+    response.json(notes);
+  });
+});
+
+app.post('/api/notes', (request, response, next) => {
   const body = request.body;
 
-  if (!body.name) {
-    return response.status(400).json({
-      error: 'name missing'
-    });
-  }
+  const note = new Note({
+    content: body.content,
+    important: body.important || false,
+    date: new Date()
+  });
 
-  if (!body.number) {
-    return response.status(400).json({
-      error: 'number missing'
-    });
-  }
+  note
+    .save()
+    .then(savedNote => savedNote.toJSON())
+    .then(savedAndFormattedNote => {
+      response.json(savedAndFormattedNote);
+    })
+    .catch(error => next(error));
+});
 
-  let checkExistsName = persons.find(item => item.name === body.name);
+app.get('/api/notes/:id', (request, response, next) => {
+  Note.findById(request.params.id)
+    .then(note => {
+      if (note) {
+        response.json(note);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch(error => next(error));
+});
 
-  if (checkExistsName) {
-    return response.status(400).json({
-      error: 'name exists'
-    });
-  }
+app.delete('/api/notes/:id', (request, response, next) => {
+  Note.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end();
+    })
+    .catch(error => next(error));
+});
+
+app.put('/api/notes/:id', (request, response, next) => {
+  const body = request.body;
 
   const note = {
-    name: body.name,
-    number: body.number,
-    date: new Date(),
-    id: generateId()
+    content: body.content,
+    important: body.important
   };
 
-  persons = persons.concat(note);
-  response.json();
+  Note.findByIdAndUpdate(request.params.id, note, { new: true })
+    .then(updatedNote => {
+      response.json(updatedNote);
+    })
+    .catch(error => next(error));
 });
 
 const unknownEndpoint = (request, response) => {
@@ -117,7 +95,10 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint);
 
-const PORT = process.env.PORT || 3002;
+// this has to be the last loaded middleware.
+app.use(errorHandler);
+
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

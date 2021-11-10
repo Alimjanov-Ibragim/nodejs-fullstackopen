@@ -1,8 +1,9 @@
 ###
-POST http://localhost:3002/api/persons
+POST http://localhost:3002/api/notes
 Content-Type: application/json
 
 {
-    "name": "Ibragim Alimjanov",
-    "number": "040-123456"
+    "content": "Ibragim Alimjanov",
+    "important": true,
+    "date": 1636362626346
 }
